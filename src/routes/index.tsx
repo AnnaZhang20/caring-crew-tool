@@ -5,7 +5,7 @@ import {
   CalendarDays,
   Lightbulb,
   Award,
-  Plus,
+  ListChecks,
   Dumbbell,
   Apple,
   Brain,
@@ -170,7 +170,7 @@ const todayKey = () => new Date().toISOString().slice(0, 10);
 
 /* ---------------- app ---------------- */
 
-type Tab = "home" | "calendar" | "learn" | "rewards";
+type Tab = "home" | "tasks" | "calendar" | "learn" | "rewards";
 
 function App() {
   const [tab, setTab] = useState<Tab>("home");
