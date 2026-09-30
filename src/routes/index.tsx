@@ -420,6 +420,101 @@ function HomeTab({
   );
 }
 
+/* ---------------- tasks ---------------- */
+
+function TasksTab({
+  done,
+  onToggle,
+  streak,
+}: {
+  done: string[];
+  onToggle: (id: string) => void;
+  streak: number;
+}) {
+  const today = new Date().toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  const allDone = done.length === DAILY_PLAN.length;
+  const pct = (done.length / DAILY_PLAN.length) * 100;
+
+  return (
+    <div className="animate-rise">
+      <p className="mt-5 text-xs font-bold tracking-widest text-muted-foreground uppercase">
+        {today}
+      </p>
+      <h1 className="mt-2 font-display text-3xl font-bold text-primary italic">Today's Tasks</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {allDone
+          ? "All done — streak is safe for today!"
+          : "Check off each task to keep your streak growing."}
+      </p>
+
+      {/* progress card */}
+      <div className="mt-4 rounded-2xl border-2 border-mint bg-mint/30 p-4">
+        <div className="flex items-center justify-between">
+          <p className="font-display text-lg font-bold">
+            {done.length}/{DAILY_PLAN.length} completed
+          </p>
+          <span className="flex items-center gap-1 rounded-full bg-rose/60 px-3 py-1 text-sm font-bold">
+            <Flame className="size-4" /> {streak} day{streak === 1 ? "" : "s"}
+          </span>
+        </div>
+        <div className="mt-3 h-3 overflow-hidden rounded-full bg-card">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* checklist */}
+      <div className="mt-4 space-y-3">
+        {DAILY_PLAN.map((item, i) => {
+          const isDone = done.includes(item.id);
+          return (
+            <button
+              key={item.id}
+              onClick={() => onToggle(item.id)}
+              className={`animate-rise flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left transition-transform hover:-translate-y-0.5 active:scale-[0.98] ${item.card}`}
+              style={{ animationDelay: `${i * 60}ms` }}
+            >
+              <span
+                className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${
+                  isDone ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-card/60"
+                }`}
+              >
+                {isDone && <Check className="size-4" />}
+              </span>
+              <item.icon className="size-5 shrink-0" />
+              <span className="flex-1">
+                <span
+                  className={`block font-display text-lg font-bold ${isDone ? "line-through opacity-70" : ""}`}
+                >
+                  {item.title}
+                </span>
+                <span className="block text-[11px] font-semibold tracking-wide uppercase opacity-70">
+                  {item.tag} · {item.time}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {allDone && (
+        <div className="animate-pop-in mt-4 rounded-2xl border-2 border-sun bg-sun/50 p-4 text-center">
+          <p className="font-display text-xl font-bold">🎉 Plan complete!</p>
+          <p className="mt-1 text-sm text-foreground/80">
+            Every task checked off — see you tomorrow for the next set.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- calendar ---------------- */
 
 function CalendarTab({
