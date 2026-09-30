@@ -77,14 +77,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "ACL Guard — Stay Healthy. Play Confident." },
+      { name: "description", content: "Your personalized guide to ACL injury prevention and peak athletic performance." },
+      { name: "author", content: "ACL Guard" },
+      { property: "og:title", content: "ACL Guard — Stay Healthy. Play Confident." },
+      { property: "og:description", content: "Your personalized guide to ACL injury prevention and peak athletic performance." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
