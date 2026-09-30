@@ -240,6 +240,7 @@ function App() {
         {tab === "home" && (
           <HomeTab done={done} onToggle={toggleDone} streak={streak} go={setTab} />
         )}
+        {tab === "tasks" && <TasksTab done={done} onToggle={toggleDone} streak={streak} />}
         {tab === "calendar" && <CalendarTab events={events} onLog={logEvent} />}
         {tab === "learn" && <LearnTab />}
         {tab === "rewards" && <RewardsTab streak={streak} totalLogged={totalLogged} done={done} />}
@@ -255,13 +256,12 @@ function App() {
             active={tab === "calendar"}
             onClick={() => setTab("calendar")}
           />
-          <button
-            onClick={() => setTab("calendar")}
-            aria-label="Log an event"
-            className="grid size-12 -translate-y-3 place-items-center rounded-full bg-primary text-primary-foreground shadow-md transition-transform hover:scale-105 active:scale-95"
-          >
-            <Plus className="size-6" />
-          </button>
+          <NavButton
+            icon={ListChecks}
+            label="Tasks"
+            active={tab === "tasks"}
+            onClick={() => setTab("tasks")}
+          />
           <NavButton
             icon={Lightbulb}
             label="Learn"
