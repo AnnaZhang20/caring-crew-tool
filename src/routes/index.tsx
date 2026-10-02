@@ -170,7 +170,25 @@ const todayKey = () => new Date().toISOString().slice(0, 10);
 
 /* ---------------- app ---------------- */
 
-type Tab = "home" | "tasks" | "calendar" | "learn" | "rewards";
+type Tab = "home" | "tasks" | "calendar" | "learn" | "rewards" | "profile";
+
+type Profile = {
+  name: string;
+  sport: string;
+  team: string;
+  reminders: boolean;
+  weeklyReport: boolean;
+  privateProfile: boolean;
+};
+
+const DEFAULT_PROFILE: Profile = {
+  name: "Anna Zhang",
+  sport: "Soccer",
+  team: "Varsity",
+  reminders: true,
+  weeklyReport: true,
+  privateProfile: true,
+};
 
 function App() {
   const [tab, setTab] = useState<Tab>("home");
@@ -230,9 +248,15 @@ function App() {
           <div className="flex items-center gap-1 rounded-full bg-rose/60 px-3 py-1.5 text-sm font-bold text-foreground">
             <Flame className="size-4" /> {streak}
           </div>
-          <div className="grid size-10 place-items-center rounded-full bg-lavender text-sm font-bold">
+          <button
+            onClick={() => setTab("profile")}
+            aria-label="Open profile and settings"
+            className={`grid size-10 place-items-center rounded-full bg-lavender text-sm font-bold transition-transform hover:scale-105 active:scale-95 ${
+              tab === "profile" ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+            }`}
+          >
             AZ
-          </div>
+          </button>
         </div>
       </header>
 
