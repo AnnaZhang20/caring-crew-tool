@@ -184,8 +184,8 @@ type Profile = {
 
 const DEFAULT_PROFILE: Profile = {
   name: "Anna Zhang",
-  sport: "Soccer",
-  team: "Varsity",
+  sport: "Volleyball",
+  team: "Basketball",
   reminders: true,
   weeklyReport: true,
   privateProfile: true,
