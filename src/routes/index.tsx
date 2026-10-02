@@ -17,6 +17,7 @@ import {
   Lock,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   X,
 } from "lucide-react";
 
