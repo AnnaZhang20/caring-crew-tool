@@ -497,6 +497,38 @@ function TasksTab({
   const allDone = done.length === DAILY_PLAN.length;
   const pct = (done.length / DAILY_PLAN.length) * 100;
 
+  // which task is expanded
+  const [open, setOpen] = useState<string | null>(DAILY_PLAN[0].id);
+  // checked sub-steps per task, persisted per day: { taskId: [stepIdx...] }
+  const [steps, setSteps] = useState<Record<string, number[]>>(() =>
+    typeof window === "undefined" ? {} : load(`acl-steps-${todayKey()}`, {}),
+  );
+  useEffect(() => save(`acl-steps-${todayKey()}`, steps), [steps]);
+
+  const stepsDone = (id: string) => (steps[id] ?? []).length;
+
+  const toggleTask = (id: string) => {
+    const isDone = done.includes(id);
+    onToggle(id);
+    // checking a task checks off all its steps; unchecking resets them
+    setSteps((prev) => ({
+      ...prev,
+      [id]: isDone ? [] : DAILY_PLAN.find((p) => p.id === id)!.steps.map((_, i) => i),
+    }));
+  };
+
+  const toggleStep = (item: PlanItem, idx: number) => {
+    const current = steps[item.id] ?? [];
+    const next = current.includes(idx)
+      ? current.filter((s) => s !== idx)
+      : [...current, idx];
+    setSteps((prev) => ({ ...prev, [item.id]: next }));
+    // last step checked → the whole task is complete
+    if (next.length === item.steps.length && !done.includes(item.id)) {
+      onToggle(item.id);
+    }
+  };
+
   return (
     <div className="animate-rise">
       <p className="mt-5 text-xs font-bold tracking-widest text-muted-foreground uppercase">
@@ -506,7 +538,7 @@ function TasksTab({
       <p className="mt-1 text-sm text-muted-foreground">
         {allDone
           ? "All done — streak is safe for today!"
-          : "Check off each task to keep your streak growing."}
+          : "Tap a task to expand it, then check off each step."}
       </p>
 
       {/* progress card */}
@@ -527,36 +559,105 @@ function TasksTab({
         </div>
       </div>
 
-      {/* checklist */}
+      {/* expandable checklist */}
       <div className="mt-4 space-y-3">
         {DAILY_PLAN.map((item, i) => {
           const isDone = done.includes(item.id);
+          const isOpen = open === item.id;
+          const stepCount = stepsDone(item.id);
+          const total = item.steps.length;
           return (
-            <button
+            <div
               key={item.id}
-              onClick={() => onToggle(item.id)}
-              className={`animate-rise flex w-full items-center gap-3 rounded-2xl border-2 p-4 text-left transition-transform hover:-translate-y-0.5 active:scale-[0.98] ${item.card}`}
+              className={`animate-rise overflow-hidden rounded-2xl border-2 transition-all ${item.card}`}
               style={{ animationDelay: `${i * 60}ms` }}
             >
-              <span
-                className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${
-                  isDone ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30 bg-card/60"
-                }`}
-              >
-                {isDone && <Check className="size-4" />}
-              </span>
-              <item.icon className="size-5 shrink-0" />
-              <span className="flex-1">
-                <span
-                  className={`block font-display text-lg font-bold ${isDone ? "line-through opacity-70" : ""}`}
+              {/* header row */}
+              <div className="flex items-center gap-3 p-4">
+                <button
+                  onClick={() => toggleTask(item.id)}
+                  aria-label={isDone ? `Mark ${item.title} not done` : `Mark ${item.title} done`}
+                  className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors active:scale-90 ${
+                    isDone
+                      ? "border-primary bg-primary text-primary-foreground"
+                      : "border-foreground/30 bg-card/60"
+                  }`}
                 >
-                  {item.title}
-                </span>
-                <span className="block text-[11px] font-semibold tracking-wide uppercase opacity-70">
-                  {item.tag} · {item.time}
-                </span>
-              </span>
-            </button>
+                  {isDone && <Check className="size-4" />}
+                </button>
+                <button
+                  onClick={() => setOpen(isOpen ? null : item.id)}
+                  aria-expanded={isOpen}
+                  className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                >
+                  <item.icon className="size-5 shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span
+                      className={`block truncate font-display text-lg font-bold ${isDone ? "line-through opacity-70" : ""}`}
+                    >
+                      {item.title}
+                    </span>
+                    <span className="block text-[11px] font-semibold tracking-wide uppercase opacity-70">
+                      {item.tag} · {item.time}
+                    </span>
+                  </span>
+                  <span
+                    className={`shrink-0 rounded-full bg-card/70 px-2 py-0.5 text-[10px] font-bold ${
+                      stepCount === total ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  >
+                    {stepCount}/{total}
+                  </span>
+                  <ChevronDown
+                    className={`size-5 shrink-0 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+                  />
+                </button>
+              </div>
+
+              {/* expanded checklist */}
+              {isOpen && (
+                <div className="animate-rise border-t-2 border-dashed border-foreground/15 px-4 pt-3 pb-4">
+                  <p className="text-xs leading-relaxed text-foreground/70">{item.detail}</p>
+                  <ul className="mt-3 space-y-2">
+                    {item.steps.map((step, idx) => {
+                      const stepChecked = (steps[item.id] ?? []).includes(idx);
+                      return (
+                        <li key={idx}>
+                          <button
+                            onClick={() => toggleStep(item, idx)}
+                            aria-label={
+                              stepChecked ? `Uncheck step: ${step}` : `Check step: ${step}`
+                            }
+                            className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                              stepChecked
+                                ? "border-primary/40 bg-card/70"
+                                : "border-transparent bg-card/40"
+                            }`}
+                          >
+                            <span
+                              className={`grid size-5 shrink-0 place-items-center rounded-md border-2 transition-colors ${
+                                stepChecked
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-foreground/30 bg-card"
+                              }`}
+                            >
+                              {stepChecked && <Check className="size-3.5" />}
+                            </span>
+                            <span
+                              className={`text-sm font-medium ${
+                                stepChecked ? "text-muted-foreground line-through" : ""
+                              }`}
+                            >
+                              {step}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
