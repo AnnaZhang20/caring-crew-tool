@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Bell, BellOff, ShieldCheck, Trash2, UserRound, Settings2, Eye, EyeOff } from "lucide-react";
 import {
   Home,
   CalendarDays,
@@ -268,6 +269,17 @@ function App() {
         {tab === "calendar" && <CalendarTab events={events} onLog={logEvent} />}
         {tab === "learn" && <LearnTab />}
         {tab === "rewards" && <RewardsTab streak={streak} totalLogged={totalLogged} done={done} />}
+        {tab === "profile" && (
+          <ProfileTab
+            streak={streak}
+            totalLogged={totalLogged}
+            onClearData={() => {
+              setDone([]);
+              setEvents({});
+              setStreak(0);
+            }}
+          />
+        )}
       </main>
 
       {/* bottom nav */}
