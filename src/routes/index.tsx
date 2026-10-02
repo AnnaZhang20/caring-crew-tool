@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Bell, BellOff, ShieldCheck, Trash2, UserRound, Settings2, Eye, EyeOff } from "lucide-react";
 import {
   Home,
   CalendarDays,
@@ -170,7 +171,25 @@ const todayKey = () => new Date().toISOString().slice(0, 10);
 
 /* ---------------- app ---------------- */
 
-type Tab = "home" | "tasks" | "calendar" | "learn" | "rewards";
+type Tab = "home" | "tasks" | "calendar" | "learn" | "rewards" | "profile";
+
+type Profile = {
+  name: string;
+  sport: string;
+  team: string;
+  reminders: boolean;
+  weeklyReport: boolean;
+  privateProfile: boolean;
+};
+
+const DEFAULT_PROFILE: Profile = {
+  name: "Anna Zhang",
+  sport: "Soccer",
+  team: "Varsity",
+  reminders: true,
+  weeklyReport: true,
+  privateProfile: true,
+};
 
 function App() {
   const [tab, setTab] = useState<Tab>("home");
@@ -230,9 +249,15 @@ function App() {
           <div className="flex items-center gap-1 rounded-full bg-rose/60 px-3 py-1.5 text-sm font-bold text-foreground">
             <Flame className="size-4" /> {streak}
           </div>
-          <div className="grid size-10 place-items-center rounded-full bg-lavender text-sm font-bold">
+          <button
+            onClick={() => setTab("profile")}
+            aria-label="Open profile and settings"
+            className={`grid size-10 place-items-center rounded-full bg-lavender text-sm font-bold transition-transform hover:scale-105 active:scale-95 ${
+              tab === "profile" ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""
+            }`}
+          >
             AZ
-          </div>
+          </button>
         </div>
       </header>
 
@@ -244,6 +269,17 @@ function App() {
         {tab === "calendar" && <CalendarTab events={events} onLog={logEvent} />}
         {tab === "learn" && <LearnTab />}
         {tab === "rewards" && <RewardsTab streak={streak} totalLogged={totalLogged} done={done} />}
+        {tab === "profile" && (
+          <ProfileTab
+            streak={streak}
+            totalLogged={totalLogged}
+            onClearData={() => {
+              setDone([]);
+              setEvents({});
+              setStreak(0);
+            }}
+          />
+        )}
       </main>
 
       {/* bottom nav */}
@@ -750,6 +786,203 @@ function RewardsTab({
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- profile & settings ---------------- */
+
+function Toggle({
+  on,
+  onClick,
+  label,
+}: {
+  on: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      onClick={onClick}
+      className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+        on ? "bg-primary" : "bg-muted"
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 size-6 rounded-full bg-card shadow transition-all ${
+          on ? "left-[22px]" : "left-0.5"
+        }`}
+      />
+    </button>
+  );
+}
+
+function ProfileTab({
+  streak,
+  totalLogged,
+  onClearData,
+}: {
+  streak: number;
+  totalLogged: number;
+  onClearData: () => void;
+}) {
+  const [profile, setProfile] = useState<Profile>(() =>
+    typeof window === "undefined" ? DEFAULT_PROFILE : load("acl-profile", DEFAULT_PROFILE),
+  );
+  const [editing, setEditing] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+
+  useEffect(() => save("acl-profile", profile), [profile]);
+
+  const set = <K extends keyof Profile>(key: K, value: Profile[K]) =>
+    setProfile((p) => ({ ...p, [key]: value }));
+
+  const initials = profile.name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return (
+    <div className="animate-rise">
+      <h1 className="mt-5 font-display text-3xl font-bold text-primary italic">Profile & Settings</h1>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Your account, preferences and privacy — all in one place.
+      </p>
+
+      {/* account card */}
+      <div className="mt-4 rounded-2xl border-2 border-lavender bg-lavender/30 p-4">
+        <div className="flex items-center gap-4">
+          <div className="grid size-16 shrink-0 place-items-center rounded-full bg-primary font-display text-xl font-bold text-primary-foreground">
+            {initials || "?"}
+          </div>
+          <div className="flex-1">
+            {editing ? (
+              <div className="space-y-2">
+                <input
+                  value={profile.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  aria-label="Name"
+                  className="w-full rounded-lg border bg-card px-3 py-1.5 text-sm font-bold outline-none focus:ring-2 focus:ring-primary"
+                />
+                <div className="flex gap-2">
+                  <input
+                    value={profile.sport}
+                    onChange={(e) => set("sport", e.target.value)}
+                    aria-label="Sport"
+                    placeholder="Sport"
+                    className="w-1/2 rounded-lg border bg-card px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <input
+                    value={profile.team}
+                    onChange={(e) => set("team", e.target.value)}
+                    aria-label="Team"
+                    placeholder="Team"
+                    className="w-1/2 rounded-lg border bg-card px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="font-display text-xl font-bold">{profile.name}</p>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {profile.sport} · {profile.team}
+                </p>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => setEditing((e) => !e)}
+            className="rounded-full bg-card px-3 py-1.5 text-xs font-bold shadow-sm transition-transform active:scale-95"
+          >
+            {editing ? "Done" : "Edit"}
+          </button>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-center">
+          <div className="rounded-xl bg-card p-3">
+            <p className="font-display text-2xl font-bold">{streak}</p>
+            <p className="text-[10px] font-bold tracking-wide text-muted-foreground uppercase">Day streak</p>
+          </div>
+          <div className="rounded-xl bg-card p-3">
+            <p className="font-display text-2xl font-bold">{totalLogged}</p>
+            <p className="text-[10px] font-bold tracking-wide text-muted-foreground uppercase">Events logged</p>
+          </div>
+        </div>
+      </div>
+
+      {/* settings */}
+      <p className="mt-5 mb-2 flex items-center gap-1.5 text-xs font-bold tracking-widest text-muted-foreground uppercase">
+        <Settings2 className="size-3.5" /> Settings
+      </p>
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 rounded-2xl border-2 border-sky bg-sky/30 p-4">
+          {profile.reminders ? <Bell className="size-5 shrink-0" /> : <BellOff className="size-5 shrink-0" />}
+          <div className="flex-1">
+            <p className="font-display text-base font-bold">Daily reminders</p>
+            <p className="text-xs text-muted-foreground">Nudge me to finish today's plan.</p>
+          </div>
+          <Toggle on={profile.reminders} onClick={() => set("reminders", !profile.reminders)} label="Daily reminders" />
+        </div>
+        <div className="flex items-center gap-3 rounded-2xl border-2 border-mint bg-mint/30 p-4">
+          <UserRound className="size-5 shrink-0" />
+          <div className="flex-1">
+            <p className="font-display text-base font-bold">Weekly progress report</p>
+            <p className="text-xs text-muted-foreground">A Sunday summary of streaks and training balance.</p>
+          </div>
+          <Toggle on={profile.weeklyReport} onClick={() => set("weeklyReport", !profile.weeklyReport)} label="Weekly progress report" />
+        </div>
+      </div>
+
+      {/* privacy */}
+      <p className="mt-5 mb-2 flex items-center gap-1.5 text-xs font-bold tracking-widest text-muted-foreground uppercase">
+        <ShieldCheck className="size-3.5" /> Privacy
+      </p>
+      <div className="space-y-3">
+        <div className="flex items-center gap-3 rounded-2xl border-2 border-peach bg-peach/30 p-4">
+          {profile.privateProfile ? <EyeOff className="size-5 shrink-0" /> : <Eye className="size-5 shrink-0" />}
+          <div className="flex-1">
+            <p className="font-display text-base font-bold">Private profile</p>
+            <p className="text-xs text-muted-foreground">Hide my stats and badges from teammates.</p>
+          </div>
+          <Toggle on={profile.privateProfile} onClick={() => set("privateProfile", !profile.privateProfile)} label="Private profile" />
+        </div>
+        <div className="rounded-2xl border-2 border-rose bg-rose/30 p-4">
+          <p className="font-display text-base font-bold">Your data stays yours</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Everything you log is stored only on this device — nothing is shared or uploaded.
+          </p>
+          {confirmClear ? (
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                onClick={() => {
+                  onClearData();
+                  setConfirmClear(false);
+                }}
+                className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground active:scale-95"
+              >
+                <Trash2 className="size-3.5" /> Yes, clear everything
+              </button>
+              <button
+                onClick={() => setConfirmClear(false)}
+                className="rounded-full bg-card px-3 py-1.5 text-xs font-bold active:scale-95"
+              >
+                Keep my data
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setConfirmClear(true)}
+              className="mt-3 flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-xs font-bold active:scale-95"
+            >
+              <Trash2 className="size-3.5" /> Clear my data
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
