@@ -48,6 +48,7 @@ type PlanItem = {
   tag: string;
   title: string;
   detail: string;
+  steps: string[];
   time: string;
   icon: typeof Dumbbell;
   card: string;
@@ -61,6 +62,11 @@ const DAILY_PLAN: PlanItem[] = [
     title: "Knee-Smart Warmup",
     detail:
       "Single-leg bridges, lateral band walks and controlled landing practice — 3 sets each, knee tracking over toes.",
+    steps: [
+      "Single-leg bridges — 3 sets of 10",
+      "Lateral band walks — 3 sets each side",
+      "Controlled landing practice — 8 slow reps",
+    ],
     time: "12 min",
     icon: Dumbbell,
     card: "border-sky bg-sky/40",
@@ -72,6 +78,11 @@ const DAILY_PLAN: PlanItem[] = [
     title: "Post-Practice Plate",
     detail:
       "Grilled chicken, brown rice and a banana — protein plus fast carbs to rebuild muscle after court time.",
+    steps: [
+      "Lean protein — chicken, eggs or beans",
+      "Brown rice or whole-grain carbs",
+      "Banana or fruit to refill energy",
+    ],
     time: "After practice",
     icon: Apple,
     card: "border-mint bg-mint/40",
@@ -83,6 +94,11 @@ const DAILY_PLAN: PlanItem[] = [
     title: "Breath Before Serve",
     detail:
       "A 60-second box-breathing reset: in for 4, hold for 4, out for 4, hold for 4. Calm nerves, sharper focus.",
+    steps: [
+      "Sit tall and close your eyes",
+      "In for 4 · hold 4 · out 4 · hold 4",
+      "Repeat the cycle for 60 seconds",
+    ],
     time: "60 sec",
     icon: Brain,
     card: "border-lavender bg-lavender/40",
@@ -94,6 +110,11 @@ const DAILY_PLAN: PlanItem[] = [
     title: "Sleep + Stretch",
     detail:
       "8 hours tonight and a 10-minute hamstring and quad foam-roll flow after dinner.",
+    steps: [
+      "Foam-roll hamstrings and quads — 10 min",
+      "Screens off 30 min before bed",
+      "Lights out for a full 8 hours",
+    ],
     time: "Tonight",
     icon: MoonStar,
     card: "border-peach bg-peach/40",
