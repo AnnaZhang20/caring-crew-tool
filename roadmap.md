@@ -4,3 +4,4 @@
 - [x] Daily plan cards: exercise, fuel, mindset, recovery (checkable, streak)
 - [x] Rewards tab: streak + badges
 - [x] Learn tab: ACL prevention education
+- [x] Tasks: expandable step checklists with synchronized completion
