@@ -31,6 +31,8 @@ export const Route = createFileRoute("/")({
           "Your personalized guide to ACL injury prevention and peak athletic performance.",
       },
       { property: "og:title", content: "ACL Guard — Stay Healthy. Play Confident." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content:
@@ -498,33 +500,42 @@ function TasksTab({
   const pct = (done.length / DAILY_PLAN.length) * 100;
 
   // which task is expanded
-  const [open, setOpen] = useState<string | null>(DAILY_PLAN[0].id);
+  const [open, setOpen] = useState<string | null>(null);
   // checked sub-steps per task, persisted per day: { taskId: [stepIdx...] }
-  const [steps, setSteps] = useState<Record<string, number[]>>(() =>
-    typeof window === "undefined" ? {} : load(`acl-steps-${todayKey()}`, {}),
-  );
-  useEffect(() => save(`acl-steps-${todayKey()}`, steps), [steps]);
+  const [steps, setSteps] = useState<Record<string, number[]>>({});
+  const [stepsLoaded, setStepsLoaded] = useState(false);
+  useEffect(() => {
+    setSteps(load(`acl-steps-${todayKey()}`, {}));
+    setStepsLoaded(true);
+  }, []);
+  useEffect(() => {
+    if (stepsLoaded) save(`acl-steps-${todayKey()}`, steps);
+  }, [steps, stepsLoaded]);
 
-  const stepsDone = (id: string) => (steps[id] ?? []).length;
+  const checkedSteps = (item: PlanItem) => done.includes(item.id)
+    ? item.steps.map((_, i) => i)
+    : steps[item.id] ?? [];
 
   const toggleTask = (id: string) => {
+    const item = DAILY_PLAN.find((p) => p.id === id);
+    if (!item) return;
     const isDone = done.includes(id);
     onToggle(id);
     // checking a task checks off all its steps; unchecking resets them
     setSteps((prev) => ({
       ...prev,
-      [id]: isDone ? [] : DAILY_PLAN.find((p) => p.id === id)!.steps.map((_, i) => i),
+      [id]: isDone ? [] : item.steps.map((_, i) => i),
     }));
   };
 
   const toggleStep = (item: PlanItem, idx: number) => {
-    const current = steps[item.id] ?? [];
+    const current = checkedSteps(item);
     const next = current.includes(idx)
       ? current.filter((s) => s !== idx)
       : [...current, idx];
     setSteps((prev) => ({ ...prev, [item.id]: next }));
     // last step checked → the whole task is complete
-    if (next.length === item.steps.length && !done.includes(item.id)) {
+    if ((next.length === item.steps.length) !== done.includes(item.id)) {
       onToggle(item.id);
     }
   };
@@ -538,7 +549,7 @@ function TasksTab({
       <p className="mt-1 text-sm text-muted-foreground">
         {allDone
           ? "All done — streak is safe for today!"
-          : "Tap a task to expand it, then check off each step."}
+           : "Small steps for a stronger day."}
       </p>
 
       {/* progress card */}
@@ -564,7 +575,7 @@ function TasksTab({
         {DAILY_PLAN.map((item, i) => {
           const isDone = done.includes(item.id);
           const isOpen = open === item.id;
-          const stepCount = stepsDone(item.id);
+           const stepCount = checkedSteps(item).length;
           const total = item.steps.length;
           return (
             <div
@@ -577,6 +588,8 @@ function TasksTab({
                 <button
                   onClick={() => toggleTask(item.id)}
                   aria-label={isDone ? `Mark ${item.title} not done` : `Mark ${item.title} done`}
+                   role="checkbox"
+                   aria-checked={isDone}
                   className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors active:scale-90 ${
                     isDone
                       ? "border-primary bg-primary text-primary-foreground"
@@ -588,6 +601,7 @@ function TasksTab({
                 <button
                   onClick={() => setOpen(isOpen ? null : item.id)}
                   aria-expanded={isOpen}
+                   aria-controls={`task-steps-${item.id}`}
                   className="flex min-w-0 flex-1 items-center gap-3 text-left"
                 >
                   <item.icon className="size-5 shrink-0" />
@@ -616,15 +630,16 @@ function TasksTab({
 
               {/* expanded checklist */}
               {isOpen && (
-                <div className="animate-rise border-t-2 border-dashed border-foreground/15 px-4 pt-3 pb-4">
-                  <p className="text-xs leading-relaxed text-foreground/70">{item.detail}</p>
-                  <ul className="mt-3 space-y-2">
+                <div id={`task-steps-${item.id}`} className="animate-rise border-t-2 border-dashed border-foreground/15 px-4 pt-3 pb-4">
+                  <ul className="space-y-2">
                     {item.steps.map((step, idx) => {
-                      const stepChecked = (steps[item.id] ?? []).includes(idx);
+                      const stepChecked = checkedSteps(item).includes(idx);
                       return (
                         <li key={idx}>
                           <button
                             onClick={() => toggleStep(item, idx)}
+                             role="checkbox"
+                             aria-checked={stepChecked}
                             aria-label={
                               stepChecked ? `Uncheck step: ${step}` : `Check step: ${step}`
                             }
