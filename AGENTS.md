@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Task completion and step checklists must stay synchronized in both directions so progress reflects checked steps.
+- Keep learning articles and their evidence/source records in a shared browser-safe data module so educational claims remain attached to citations.

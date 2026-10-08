@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { LEARN_CATEGORIES, LEARN_TOPICS, type LearnCategory } from "@/lib/acl-learning";
 import { Bell, BellOff, ShieldCheck, Trash2, UserRound, Settings2, Eye, EyeOff } from "lucide-react";
 import {
   Home,
@@ -18,6 +20,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  ExternalLink,
   X,
 } from "lucide-react";
 
@@ -51,6 +54,7 @@ type PlanItem = {
   title: string;
   detail: string;
   steps: string[];
+  note?: string;
   time: string;
   icon: typeof Dumbbell;
   card: string;
@@ -63,12 +67,13 @@ const DAILY_PLAN: PlanItem[] = [
     tag: "Prevention Workout",
     title: "Knee-Smart Warmup",
     detail:
-      "Single-leg bridges, lateral band walks and controlled landing practice — 3 sets each, knee tracking over toes.",
+      "Build strength and landing control with bridges, band walks and coach-guided practice. Stop if a drill hurts.",
     steps: [
       "Single-leg bridges — 3 sets of 10",
       "Lateral band walks — 3 sets each side",
-      "Controlled landing practice — 8 slow reps",
+      "8 slow landings — bend hips and knees, knees follow toes",
     ],
+    note: "Keep your trunk steady and ask your coach for feedback. Prevention works best as a consistent, varied program—not one exercise. Stop painful drills and tell a trusted adult.",
     time: "12 min",
     icon: Dumbbell,
     card: "border-sky bg-sky/40",
@@ -79,12 +84,14 @@ const DAILY_PLAN: PlanItem[] = [
     tag: "Fuel Goal",
     title: "Post-Practice Plate",
     detail:
-      "Grilled chicken, brown rice and a banana — protein plus fast carbs to rebuild muscle after court time.",
+      "Pair protein with carbs after practice, and add a vitamin C food. Regular meals and snacks support training, growth and recovery.",
     steps: [
       "Lean protein — chicken, eggs or beans",
       "Brown rice or whole-grain carbs",
       "Banana or fruit to refill energy",
+      "Add vitamin C — orange, kiwi, strawberries or peppers",
     ],
+    note: "Collagen is optional—not proven to prevent ACL tears in teens. Before trying collagen or vitamin D supplements, ask a parent or guardian and a sports dietitian or clinician. Food comes first; no supplement is needed to complete this task.",
     time: "After practice",
     icon: Apple,
     card: "border-mint bg-mint/40",
@@ -100,7 +107,9 @@ const DAILY_PLAN: PlanItem[] = [
       "Sit tall and close your eyes",
       "In for 4 · hold 4 · out 4 · hold 4",
       "Repeat the cycle for 60 seconds",
+      "Name one worry; share it with a trusted adult if needed",
     ],
+    note: "Fear after an injury is normal. Breathing can help you cope, but it does not replace support from your care team or return-to-sport clearance.",
     time: "60 sec",
     icon: Brain,
     card: "border-lavender bg-lavender/40",
@@ -121,39 +130,6 @@ const DAILY_PLAN: PlanItem[] = [
     icon: MoonStar,
     card: "border-peach bg-peach/40",
     chip: "bg-peach text-secondary-foreground",
-  },
-];
-
-const LEARN_TOPICS = [
-  {
-    title: "Why ACL injuries happen",
-    body: "Most ACL tears are non-contact — they happen during cutting, landing or sudden stops when the knee caves inward. Training your hips, glutes and hamstrings keeps the knee stable in those moments.",
-    color: "bg-rose/50 border-rose",
-  },
-  {
-    title: "Land like a pro",
-    body: "Land softly on the balls of your feet with knees bent and aligned over your toes — never locked or caving in. Practice slow, controlled landings before adding speed or height.",
-    color: "bg-sky/50 border-sky",
-  },
-  {
-    title: "Strength that protects",
-    body: "Strong hamstrings balance the pull on your knee. Nordic curls, single-leg bridges and lateral band walks 2–3 times a week are proven to cut ACL risk significantly.",
-    color: "bg-mint/50 border-mint",
-  },
-  {
-    title: "Fuel for strong joints",
-    body: "Protein at every meal rebuilds muscle, vitamin C supports collagen in ligaments, and staying hydrated keeps tissue resilient. Never train hard on an empty tank.",
-    color: "bg-sun/60 border-sun",
-  },
-  {
-    title: "Rest is training",
-    body: "Fatigue is one of the biggest injury risk factors. Sleep 8+ hours, take at least one full rest day a week, and speak up when something feels off — playing through pain is never worth it.",
-    color: "bg-lavender/50 border-lavender",
-  },
-  {
-    title: "Your mind matters",
-    body: "Fear of injury can change how you move. Visualization, breathing routines and talking with coaches or teammates build the confidence to play free and safe.",
-    color: "bg-peach/50 border-peach",
   },
 ];
 
@@ -670,6 +646,9 @@ function TasksTab({
                       );
                     })}
                   </ul>
+                  {item.note && (
+                    <p className="mt-3 text-xs leading-relaxed text-foreground/80">{item.note}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -829,21 +808,49 @@ function CalendarTab({
 /* ---------------- learn ---------------- */
 
 function LearnTab() {
+  const [category, setCategory] = useState<LearnCategory>("All");
+  const topics = LEARN_TOPICS.filter((topic) => category === "All" || topic.category === category);
   return (
     <div className="animate-rise">
       <h1 className="mt-5 font-display text-3xl font-bold text-primary italic">Learn & Move Safe</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Science-based ACL prevention, made simple — strength, movement, fuel, mindset and rest.
+        Stronger habits. Steadier movement. Fuel for your sport.
       </p>
+      <p className="mt-3 border-l-2 border-primary pl-3 text-xs leading-relaxed text-muted-foreground">
+        Education, not a treatment plan. If you’re injured or recovering from surgery, follow your clinician’s guidance.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-2" aria-label="Learning topics">
+        {LEARN_CATEGORIES.map((value) => (
+          <Button key={value} variant={category === value ? "default" : "outline"} size="sm"
+            aria-pressed={category === value} onClick={() => setCategory(value)}>
+            {value}
+          </Button>
+        ))}
+      </div>
       <div className="mt-4 space-y-3">
-        {LEARN_TOPICS.map((t, i) => (
+        {topics.map((t, i) => (
           <div
-            key={t.title}
+            key={t.id}
             className={`animate-rise rounded-2xl border-2 p-4 ${t.color}`}
             style={{ animationDelay: `${i * 50}ms` }}
           >
-            <p className="font-display text-lg font-bold">{t.title}</p>
+            <p className="text-[10px] font-bold uppercase text-muted-foreground">{t.category}</p>
+            <h2 className="mt-1 font-display text-lg font-bold">{t.title}</h2>
             <p className="mt-1 text-sm leading-relaxed text-foreground/80">{t.body}</p>
+            <p className="mt-3 text-sm leading-relaxed"><span className="font-bold">Try today: </span>{t.action}</p>
+            <details className="mt-3 border-t border-foreground/15 pt-3">
+              <summary className="cursor-pointer text-xs font-bold text-primary">Evidence & sources</summary>
+              <p className="mt-2 text-xs leading-relaxed text-foreground/80">{t.evidence}</p>
+              <div className="mt-2 flex flex-col items-start gap-2">
+                {t.sources.map((source) => (
+                  <a key={source.url} href={source.url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-primary underline underline-offset-2">
+                    {source.label}<ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                ))}
+              </div>
+            </details>
           </div>
         ))}
       </div>

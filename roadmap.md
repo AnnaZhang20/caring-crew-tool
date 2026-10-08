@@ -5,3 +5,6 @@
 - [x] Rewards tab: streak + badges
 - [x] Learn tab: ACL prevention education
 - [x] Tasks: expandable step checklists with synchronized completion
+- [ ] Add uploaded research to Learn with evidence context and source links
+- [ ] Add practical nutrition and movement guidance to daily task checklists
+- [ ] Verify learning and checklist updates
