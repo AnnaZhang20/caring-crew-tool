@@ -143,10 +143,10 @@ const BADGES = [
 ];
 
 type EventType = "workout" | "practice" | "game";
-const EVENT_STYLES: Record<EventType, { label: string; dot: string }> = {
-  workout: { label: "Workout", dot: "bg-primary" },
-  practice: { label: "Practice", dot: "bg-rose" },
-  game: { label: "Game", dot: "bg-sun" },
+const EVENT_STYLES: Record<EventType, { label: string; dot: string; chip: string; short: string }> = {
+  workout: { label: "Workout", dot: "bg-primary", chip: "bg-primary text-primary-foreground", short: "Wrk" },
+  practice: { label: "Practice", dot: "bg-rose", chip: "bg-rose text-foreground", short: "Prac" },
+  game: { label: "Game", dot: "bg-sun", chip: "bg-sun text-foreground", short: "Game" },
 };
 
 /* ---------------- storage helpers ---------------- */
