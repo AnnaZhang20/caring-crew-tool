@@ -720,31 +720,40 @@ function CalendarTab({
             <span key={i}>{d}</span>
           ))}
         </div>
-        <div className="mt-1 grid grid-cols-7 gap-1">
-          {cells.map((key, i) =>
-            key === null ? (
-              <span key={`e${i}`} />
-            ) : (
+        <div className="mt-1 grid grid-cols-7 gap-1.5">
+          {cells.map((key, i) => {
+            if (key === null) return <span key={`e${i}`} />;
+            const dayEvents = events[key] ?? [];
+            const isToday = key === todayKey();
+            return (
               <button
                 key={key}
                 onClick={() => setSelected(key)}
-                className={`flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-sm font-semibold transition-colors ${
+                aria-label={`${key}, ${dayEvents.length ? dayEvents.map((t) => EVENT_STYLES[t].label).join(", ") : "no events"}`}
+                className={`flex min-h-[56px] flex-col items-center gap-0.5 rounded-lg border-2 px-0.5 pt-0.5 pb-1 transition-colors ${
                   key === selected
-                    ? "bg-primary text-primary-foreground"
-                    : key === todayKey()
-                      ? "bg-card ring-2 ring-primary/40"
-                      : "hover:bg-card"
+                    ? "border-primary bg-primary/10"
+                    : isToday
+                      ? "border-primary/40 bg-card"
+                      : "border-foreground/10 bg-card/60 hover:border-primary/40"
                 }`}
               >
-                {Number(key.slice(-2))}
-                <span className="flex gap-0.5">
-                  {(events[key] ?? []).map((t) => (
-                    <span key={t} className={`size-1.5 rounded-full ${EVENT_STYLES[t].dot}`} />
+                <span className={`text-xs font-bold leading-none ${key === selected ? "text-primary" : isToday ? "text-primary" : "text-foreground/70"}`}>
+                  {Number(key.slice(-2))}
+                </span>
+                <span className="flex w-full flex-col items-center gap-0.5">
+                  {dayEvents.map((t) => (
+                    <span
+                      key={t}
+                      className={`w-full rounded-full px-0.5 py-[1px] text-center text-[7px] font-bold leading-none ${EVENT_STYLES[t].chip}`}
+                    >
+                      {EVENT_STYLES[t].short}
+                    </span>
                   ))}
                 </span>
               </button>
-            ),
-          )}
+            );
+          })}
         </div>
       </div>
 
