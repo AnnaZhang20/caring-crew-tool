@@ -13,7 +13,7 @@ type LearnTopic = {
 };
 
 // Topic selection came from Anna's notes; article wording and evidence summaries were written by AI.
-const ANNA_RESEARCH_TOPICS = new Set(["landing", "hamstrings", "consistency", "protein", "collagen", "vitamin-d", "energy", "mindset"]);
+const ANNA_RESEARCH_TOPICS = new Set(["landing", "training", "hamstrings", "consistency", "protein", "collagen", "vitamin-d", "energy", "mindset", "recovery"]);
 export function learningAttribution(id: string): string {
   return ANNA_RESEARCH_TOPICS.has(id)
     ? "Anna’s research · AI-written summary"

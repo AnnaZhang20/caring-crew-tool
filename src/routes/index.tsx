@@ -233,6 +233,11 @@ function App() {
   const toggleDone = (id: string) => {
     if (!ready) return;
     const next = done.includes(id) ? done.filter((d) => d !== id) : [...done, id];
+    const item = DAILY_PLAN.find((task) => task.id === id);
+    if (item) {
+      const savedSteps = load<Record<string, number[]>>(`acl-steps-${day}`, {});
+      save(`acl-steps-${day}`, { ...savedSteps, [id]: next.includes(id) ? item.steps.map((_, i) => i) : [] });
+    }
     setDone(next);
     setProgress((prev) => awardBadges({ ...prev, days: { ...prev.days, [day]: next.length } }, day, totalLogged));
   };
