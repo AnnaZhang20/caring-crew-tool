@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { LEARN_CATEGORIES, LEARN_TOPICS, type LearnCategory } from "@/lib/acl-learning";
+import { LEARN_CATEGORIES, LEARN_TOPICS, type LearnCategory, learningAttribution } from "@/lib/acl-learning";
+import { BADGES, EMPTY_PROGRESS, awardBadges, badgeProgress, currentStreak, localDateKey, type RewardProgress } from "@/lib/acl-rewards";
 import { Bell, BellOff, ShieldCheck, Trash2, UserRound, Settings2, Eye, EyeOff } from "lucide-react";
 import {
   Home,
@@ -133,15 +134,6 @@ const DAILY_PLAN: PlanItem[] = [
   },
 ];
 
-const BADGES = [
-  { id: "first", name: "First Rep", need: 1, icon: Medal, desc: "Complete your first plan item" },
-  { id: "day3", name: "3-Day Run", need: 3, icon: Flame, desc: "Hold a 3-day streak" },
-  { id: "day7", name: "Week Warrior", need: 7, icon: Flame, desc: "Hold a 7-day streak" },
-  { id: "day14", name: "Fortnight Focus", need: 14, icon: Flame, desc: "Hold a 14-day streak" },
-  { id: "day30", name: "MVP Month", need: 30, icon: Award, desc: "Hold a 30-day streak" },
-  { id: "log5", name: "Logged In", need: 5, icon: CalendarDays, desc: "Log 5 calendar events" },
-];
-
 type EventType = "workout" | "practice" | "game";
 const EVENT_STYLES: Record<EventType, { label: string; dot: string; chip: string; short: string }> = {
   workout: { label: "Workout", dot: "bg-primary", chip: "bg-primary text-primary-foreground", short: "Wrk" },
@@ -167,7 +159,7 @@ function save(key: string, value: unknown) {
   }
 }
 
-const todayKey = () => new Date().toISOString().slice(0, 10);
+const todayKey = localDateKey;
 
 /* ---------------- app ---------------- */
 
@@ -193,28 +185,64 @@ const DEFAULT_PROFILE: Profile = {
 
 function App() {
   const [tab, setTab] = useState<Tab>("home");
-  const [done, setDone] = useState<string[]>(() =>
-    typeof window === "undefined" ? [] : load(`acl-done-${todayKey()}`, []),
-  );
-  const [events, setEvents] = useState<Record<string, EventType[]>>(() =>
-    typeof window === "undefined" ? {} : load("acl-events", {}),
-  );
-  const [streak, setStreak] = useState<number>(() =>
-    typeof window === "undefined" ? 0 : load("acl-streak", 0),
-  );
+  const [day, setDay] = useState("");
+  const [done, setDone] = useState<string[]>([]);
+  const [events, setEvents] = useState<Record<string, EventType[]>>({});
+  const [progress, setProgress] = useState<RewardProgress>(EMPTY_PROGRESS);
+  const [ready, setReady] = useState(false);
 
-  useEffect(() => save(`acl-done-${todayKey()}`, done), [done]);
-  useEffect(() => save("acl-events", events), [events]);
-  useEffect(() => save("acl-streak", streak), [streak]);
-
-  const toggleDone = (id: string) => {
-    setDone((prev) => {
-      const next = prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id];
-      if (!prev.includes(id) && next.length === DAILY_PLAN.length) {
-        setStreak((s) => s + 1);
+  useEffect(() => {
+    const date = todayKey();
+    const savedDone = load<string[]>(`acl-done-${date}`, []).filter((id) => DAILY_PLAN.some((item) => item.id === id));
+    const savedProgress = load<RewardProgress>("acl-rewards", EMPTY_PROGRESS);
+    // Migrate existing dated task records, never the old increment-only streak counter.
+    const days = { ...savedProgress.days };
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key?.startsWith("acl-done-")) {
+        days[key.slice(9)] = load<string[]>(key, []).filter((id) => DAILY_PLAN.some((item) => item.id === id)).length;
       }
-      return next;
-    });
+    }
+    days[date] = savedDone.length;
+    setDay(date);
+    setDone(savedDone);
+    setEvents(load("acl-events", {}));
+    setProgress({ ...savedProgress, days });
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    const checkDay = () => {
+      const date = todayKey();
+      if (date !== day) {
+        setDay(date);
+        setDone(load(`acl-done-${date}`, []));
+      }
+    };
+    const timer = window.setInterval(checkDay, 30000);
+    window.addEventListener("focus", checkDay);
+    return () => { window.clearInterval(timer); window.removeEventListener("focus", checkDay); };
+  }, [ready, day]);
+
+  useEffect(() => { if (ready) save(`acl-done-${day}`, done); }, [done, ready, day]);
+  useEffect(() => { if (ready) save("acl-events", events); }, [events, ready]);
+  useEffect(() => { if (ready) save("acl-rewards", progress); }, [progress, ready]);
+
+  const streak = currentStreak(progress.days, day || todayKey());
+  const toggleDone = (id: string) => {
+    if (!ready) return;
+    const next = done.includes(id) ? done.filter((d) => d !== id) : [...done, id];
+    const item = DAILY_PLAN.find((task) => task.id === id);
+    if (item) {
+      const savedSteps = load<Record<string, number[]>>(`acl-steps-${day}`, {});
+      save(`acl-steps-${day}`, { ...savedSteps, [id]: next.includes(id) ? item.steps.map((_, i) => i) : [] });
+    }
+    setDone(next);
+    setProgress((prev) => awardBadges({ ...prev, days: { ...prev.days, [day]: next.length } }, day, totalLogged));
+  };
+  const learnFact = (id: string) => {
+    setProgress((prev) => awardBadges({ ...prev, learned: [...new Set([...prev.learned, id])] }, day, totalLogged));
   };
 
   const logEvent = (date: string, type: EventType) => {
@@ -229,6 +257,14 @@ function App() {
     () => Object.values(events).reduce((n, d) => n + d.length, 0),
     [events],
   );
+
+  useEffect(() => {
+    if (!ready) return;
+    setProgress((prev) => {
+      const next = awardBadges(prev, day, totalLogged);
+      return next.earned.length === prev.earned.length ? prev : next;
+    });
+  }, [totalLogged, ready, day]);
 
   return (
     <div className="mx-auto flex min-h-screen max-w-md flex-col bg-background pb-24">
@@ -263,12 +299,12 @@ function App() {
 
       <main className="flex-1 px-5">
         {tab === "home" && (
-          <HomeTab done={done} onToggle={toggleDone} streak={streak} go={setTab} />
+          <HomeTab date={day} done={done} onToggle={toggleDone} streak={streak} go={setTab} />
         )}
-        {tab === "tasks" && <TasksTab done={done} onToggle={toggleDone} streak={streak} />}
+        {tab === "tasks" && <TasksTab key={day} date={day} done={done} onToggle={toggleDone} streak={streak} />}
         {tab === "calendar" && <CalendarTab events={events} onLog={logEvent} />}
-        {tab === "learn" && <LearnTab />}
-        {tab === "rewards" && <RewardsTab streak={streak} totalLogged={totalLogged} done={done} />}
+        {tab === "learn" && <LearnTab learned={progress.learned} onLearn={learnFact} />}
+        {tab === "rewards" && <RewardsTab streak={streak} totalLogged={totalLogged} progress={progress} day={day} />}
         {tab === "profile" && (
           <ProfileTab
             streak={streak}
@@ -276,7 +312,10 @@ function App() {
             onClearData={() => {
               setDone([]);
               setEvents({});
-              setStreak(0);
+              for (const key of Object.keys(localStorage)) {
+                if (key.startsWith("acl-done-") || key.startsWith("acl-steps-") || key === "acl-streak") localStorage.removeItem(key);
+              }
+              setProgress(EMPTY_PROGRESS);
             }}
           />
         )}
@@ -343,21 +382,23 @@ function NavButton({
 /* ---------------- home ---------------- */
 
 function HomeTab({
+  date,
   done,
   onToggle,
   streak,
   go,
 }: {
+  date: string;
   done: string[];
   onToggle: (id: string) => void;
   streak: number;
   go: (t: Tab) => void;
 }) {
-  const today = new Date().toLocaleDateString("en-US", {
+  const today = date ? new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
-  });
+  }) : "";
   const allDone = done.length === DAILY_PLAN.length;
 
   return (
@@ -393,13 +434,14 @@ function HomeTab({
             {allDone ? "Plan complete!" : "Today's plan"}
           </p>
           <p className="text-xs text-muted-foreground">
-            {allDone
-              ? `Streak extended to ${streak} days. Amazing work!`
-              : "Finish all four to grow your streak."}
+            {done.length >= 3
+              ? `Today's streak goal met · ${streak} day${streak === 1 ? "" : "s"}!`
+              : "Complete 3 of 4 tasks to grow your streak."}
           </p>
         </div>
       </div>
 
+      <p className="mt-4 text-xs text-muted-foreground">AI-generated daily routines · Fuel and movement informed by Anna’s research</p>
       {/* plan cards */}
       <div className="mt-5 space-y-3">
         {DAILY_PLAN.map((item, i) => {
@@ -446,10 +488,9 @@ function HomeTab({
         onClick={() => go("learn")}
         className="mt-5 w-full rounded-2xl border-2 border-lavender bg-lavender/30 p-4 text-left transition-transform hover:-translate-y-0.5"
       >
-        <p className="text-[10px] font-bold tracking-wide uppercase">Did you know?</p>
+        <p className="text-[10px] font-bold tracking-wide uppercase">Did you know? · AI-written</p>
         <p className="mt-1 text-sm leading-relaxed text-foreground/80">
-          Most ACL tears happen without any contact — landing and cutting mechanics matter more
-          than anything. Tap to learn how to move safer.
+          Landing control is one part of ACL prevention, alongside strength, balance and consistent practice.
         </p>
       </button>
     </div>
@@ -459,19 +500,21 @@ function HomeTab({
 /* ---------------- tasks ---------------- */
 
 function TasksTab({
+  date,
   done,
   onToggle,
   streak,
 }: {
+  date: string;
   done: string[];
   onToggle: (id: string) => void;
   streak: number;
 }) {
-  const today = new Date().toLocaleDateString("en-US", {
+  const today = date ? new Date(`${date}T12:00:00`).toLocaleDateString("en-US", {
     weekday: "long",
     month: "long",
     day: "numeric",
-  });
+  }) : "";
   const allDone = done.length === DAILY_PLAN.length;
   const pct = (done.length / DAILY_PLAN.length) * 100;
 
@@ -481,16 +524,16 @@ function TasksTab({
   const [steps, setSteps] = useState<Record<string, number[]>>({});
   const [stepsLoaded, setStepsLoaded] = useState(false);
   useEffect(() => {
-    setSteps(load(`acl-steps-${todayKey()}`, {}));
+    setSteps(load(`acl-steps-${date}`, {}));
     setStepsLoaded(true);
-  }, []);
+  }, [date]);
   useEffect(() => {
-    if (stepsLoaded) save(`acl-steps-${todayKey()}`, steps);
-  }, [steps, stepsLoaded]);
+    if (stepsLoaded) save(`acl-steps-${date}`, steps);
+  }, [steps, stepsLoaded, date]);
 
   const checkedSteps = (item: PlanItem) => done.includes(item.id)
     ? item.steps.map((_, i) => i)
-    : steps[item.id] ?? [];
+    : (steps[item.id]?.length === item.steps.length ? [] : steps[item.id] ?? []);
 
   const toggleTask = (id: string) => {
     const item = DAILY_PLAN.find((p) => p.id === id);
@@ -523,9 +566,9 @@ function TasksTab({
       </p>
       <h1 className="mt-2 font-display text-3xl font-bold text-primary italic">Today's Tasks</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        {allDone
-          ? "All done — streak is safe for today!"
-           : "Small steps for a stronger day."}
+        {done.length >= 3
+          ? "Streak goal met — 3 of 4 tasks complete!"
+          : "Complete 3 of 4 tasks to keep your streak going."}
       </p>
 
       {/* progress card */}
@@ -546,6 +589,7 @@ function TasksTab({
         </div>
       </div>
 
+      <p className="mt-3 text-xs text-muted-foreground">AI-generated daily routines · Fuel and movement informed by Anna’s research</p>
       {/* expandable checklist */}
       <div className="mt-4 space-y-3">
         {DAILY_PLAN.map((item, i) => {
@@ -804,10 +848,9 @@ function CalendarTab({
       </div>
 
       <div className="mt-4 rounded-2xl border-2 border-peach bg-peach/30 p-4">
-        <p className="text-[10px] font-bold tracking-wide uppercase">Coach's tip</p>
+        <p className="text-[10px] font-bold tracking-wide uppercase">Training note · AI-generated</p>
         <p className="mt-1 text-sm leading-relaxed text-foreground/80">
-          Logged a game tomorrow? Today's plan automatically emphasizes landing mechanics and
-          early recovery. Small shifts, big protection.
+          Keep your coach-led warmup consistent through the season, and make time for food and recovery around games.
         </p>
       </div>
     </div>
@@ -816,7 +859,7 @@ function CalendarTab({
 
 /* ---------------- learn ---------------- */
 
-function LearnTab() {
+function LearnTab({ learned, onLearn }: { learned: string[]; onLearn: (id: string) => void }) {
   const [category, setCategory] = useState<LearnCategory>("All");
   const topics = LEARN_TOPICS.filter((topic) => category === "All" || topic.category === category);
   return (
@@ -828,6 +871,8 @@ function LearnTab() {
       <p className="mt-3 border-l-2 border-primary pl-3 text-xs leading-relaxed text-muted-foreground">
         Education, not a treatment plan. If you’re injured or recovering from surgery, follow your clinician’s guidance.
       </p>
+      <p className="mt-3 text-xs text-muted-foreground">Anna’s research = topics from your notes. Article wording and practical actions are AI-written, not your original text.</p>
+      <p className="mt-2 text-sm font-bold text-primary" aria-live="polite">{learned.length}/{LEARN_TOPICS.length} facts learned</p>
       <div className="mt-4 flex flex-wrap gap-2" aria-label="Learning topics">
         {LEARN_CATEGORIES.map((value) => (
           <Button key={value} variant={category === value ? "default" : "outline"} size="sm"
@@ -844,6 +889,7 @@ function LearnTab() {
             style={{ animationDelay: `${i * 50}ms` }}
           >
             <p className="text-[10px] font-bold uppercase text-muted-foreground">{t.category}</p>
+            <p className="mt-1 text-xs font-semibold text-primary">{learningAttribution(t.id)}</p>
             <h2 className="mt-1 font-display text-lg font-bold">{t.title}</h2>
             <p className="mt-1 text-sm leading-relaxed text-foreground/80">{t.body}</p>
             <p className="mt-3 text-sm leading-relaxed"><span className="font-bold">Try today: </span>{t.action}</p>
@@ -860,6 +906,11 @@ function LearnTab() {
                 ))}
               </div>
             </details>
+            <Button className="mt-3" size="sm" variant={learned.includes(t.id) ? "secondary" : "outline"}
+              aria-label={`Mark learned: ${t.title}`} disabled={learned.includes(t.id)} onClick={() => onLearn(t.id)}>
+              {learned.includes(t.id) ? <Check /> : <Lightbulb />}
+              {learned.includes(t.id) ? "Learned" : "I learned this"}
+            </Button>
           </div>
         ))}
       </div>
@@ -872,19 +923,15 @@ function LearnTab() {
 function RewardsTab({
   streak,
   totalLogged,
-  done,
+  progress,
+  day,
 }: {
   streak: number;
   totalLogged: number;
-  done: string[];
+  progress: RewardProgress;
+  day: string;
 }) {
-  const progressFor = (id: string) => {
-    if (id === "first") return done.length > 0 ? 1 : 0;
-    if (id === "log5") return totalLogged;
-    return streak;
-  };
-
-  const unlocked = BADGES.filter((b) => progressFor(b.id) >= b.need).length;
+  const unlocked = BADGES.filter((b) => progress.earned.includes(b.id)).length;
 
   return (
     <div className="animate-rise">
@@ -903,18 +950,20 @@ function RewardsTab({
         <div>
           <p className="font-display text-xl font-bold">Current streak</p>
           <p className="text-sm text-muted-foreground">
-            Complete all 4 plan items daily to keep it burning.
+            Complete at least 3 of 4 tasks each day. Earned badges stay yours, even after a missed day.
           </p>
         </div>
       </div>
 
+      <p className="mt-4 text-sm font-bold text-primary">{progress.learned.length}/{LEARN_TOPICS.length} facts learned</p>
+      <p className="mt-1 text-xs text-muted-foreground">AI-generated badge names · Anna’s task-streak and learning reward goals</p>
       <p className="mt-5 mb-3 text-xs font-bold tracking-widest text-muted-foreground uppercase">
         Badge shelf · {unlocked} of {BADGES.length} unlocked
       </p>
       <div className="grid grid-cols-2 gap-3">
         {BADGES.map((b, i) => {
-          const progress = progressFor(b.id);
-          const isUnlocked = progress >= b.need;
+          const count = badgeProgress(b.kind, progress, day || todayKey(), totalLogged);
+          const isUnlocked = progress.earned.includes(b.id);
           return (
             <div
               key={b.id}
@@ -932,9 +981,10 @@ function RewardsTab({
               </div>
               <p className="mt-2 font-display text-base font-bold">{b.name}</p>
               <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">{b.desc}</p>
+              {isUnlocked && <p className="mt-1 text-xs font-bold text-primary">Earned</p>}
               {!isUnlocked && (
                 <p className="mt-1 text-[11px] font-bold text-primary">
-                  {Math.min(progress, b.need)}/{b.need}
+                  {Math.min(count, b.need)}/{b.need}
                 </p>
               )}
             </div>
