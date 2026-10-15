@@ -441,7 +441,7 @@ function HomeTab({
         </div>
       </div>
 
-      <p className="mt-4 text-xs text-muted-foreground">AI-generated daily routines · Fuel and movement informed by Anna’s research</p>
+      <p className="mt-4 text-xs text-muted-foreground">AI Information daily routines · Fuel and movement informed by Clinical Research</p>
       {/* plan cards */}
       <div className="mt-5 space-y-3">
         {DAILY_PLAN.map((item, i) => {
@@ -488,7 +488,7 @@ function HomeTab({
         onClick={() => go("learn")}
         className="mt-5 w-full rounded-2xl border-2 border-lavender bg-lavender/30 p-4 text-left transition-transform hover:-translate-y-0.5"
       >
-        <p className="text-[10px] font-bold tracking-wide uppercase">Did you know? · AI-written</p>
+        <p className="text-[10px] font-bold tracking-wide uppercase">Did you know? · AI Information</p>
         <p className="mt-1 text-sm leading-relaxed text-foreground/80">
           Landing control is one part of ACL prevention, alongside strength, balance and consistent practice.
         </p>
@@ -589,7 +589,7 @@ function TasksTab({
         </div>
       </div>
 
-      <p className="mt-3 text-xs text-muted-foreground">AI-generated daily routines · Fuel and movement informed by Anna’s research</p>
+      <p className="mt-3 text-xs text-muted-foreground">AI Information daily routines · Fuel and movement informed by Clinical Research</p>
       {/* expandable checklist */}
       <div className="mt-4 space-y-3">
         {DAILY_PLAN.map((item, i) => {
@@ -848,7 +848,7 @@ function CalendarTab({
       </div>
 
       <div className="mt-4 rounded-2xl border-2 border-peach bg-peach/30 p-4">
-        <p className="text-[10px] font-bold tracking-wide uppercase">Training note · AI-generated</p>
+        <p className="text-[10px] font-bold tracking-wide uppercase">Training note · AI Information</p>
         <p className="mt-1 text-sm leading-relaxed text-foreground/80">
           Keep your coach-led warmup consistent through the season, and make time for food and recovery around games.
         </p>
@@ -871,7 +871,7 @@ function LearnTab({ learned, onLearn }: { learned: string[]; onLearn: (id: strin
       <p className="mt-3 border-l-2 border-primary pl-3 text-xs leading-relaxed text-muted-foreground">
         Education, not a treatment plan. If you’re injured or recovering from surgery, follow your clinician’s guidance.
       </p>
-      <p className="mt-3 text-xs text-muted-foreground">Anna’s research = topics from your notes. Article wording and practical actions are AI-written, not your original text.</p>
+      <p className="mt-3 text-xs text-muted-foreground">Clinical Research = topics from your notes. Article wording and practical actions are AI Information, not your original text.</p>
       <p className="mt-2 text-sm font-bold text-primary" aria-live="polite">{learned.length}/{LEARN_TOPICS.length} facts learned</p>
       <div className="mt-4 flex flex-wrap gap-2" aria-label="Learning topics">
         {LEARN_CATEGORIES.map((value) => (
@@ -956,7 +956,7 @@ function RewardsTab({
       </div>
 
       <p className="mt-4 text-sm font-bold text-primary">{progress.learned.length}/{LEARN_TOPICS.length} facts learned</p>
-      <p className="mt-1 text-xs text-muted-foreground">AI-generated badge names · Anna’s task-streak and learning reward goals</p>
+      <p className="mt-1 text-xs text-muted-foreground">AI Information badge names · Your task-streak and learning reward goals</p>
       <p className="mt-5 mb-3 text-xs font-bold tracking-widest text-muted-foreground uppercase">
         Badge shelf · {unlocked} of {BADGES.length} unlocked
       </p>
