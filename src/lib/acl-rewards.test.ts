@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { describe, expect, test } from "bun:test";
 import { awardBadges, currentStreak, EMPTY_PROGRESS, localDateKey } from "./acl-rewards";
 
