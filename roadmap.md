@@ -8,6 +8,6 @@
 - [x] Add uploaded research to Learn with evidence context and source links
 - [x] Add practical nutrition and movement guidance to daily task checklists
 - [x] Verify learning and checklist updates
-- [ ] Label Anna's research and AI-written content
-- [ ] Award badges for 3-of-4 task streaks and learned facts
-- [ ] Verify rewards, learning progress, and checklist synchronization
+- [x] Label Anna's research and AI-written content
+- [x] Award badges for 3-of-4 task streaks and learned facts
+- [x] Verify rewards, learning progress, and checklist synchronization
