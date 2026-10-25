@@ -16,7 +16,7 @@ type LearnTopic = {
 const ANNA_RESEARCH_TOPICS = new Set(["landing", "training", "hamstrings", "consistency", "protein", "collagen", "vitamin-d", "energy", "mindset", "recovery"]);
 export function learningAttribution(id: string): string {
   return ANNA_RESEARCH_TOPICS.has(id)
-    ? "Clinical Research · AI Information summary"
+    ? "Clinical Research"
     : "AI Information · source-supported";
 }
 
