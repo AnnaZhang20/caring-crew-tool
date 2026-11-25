@@ -11,3 +11,6 @@
 - [x] Label Clinical Research and AI Information content
 - [x] Award badges for 3-of-4 task streaks and learned facts
 - [x] Verify rewards, learning progress, and checklist synchronization
+- [ ] Add per-athlete accounts and explicit SMS opt-in preferences
+- [ ] Connect SMS delivery and schedule activity, workout, and at-risk streak reminders
+- [ ] Verify reminder rules, privacy controls, and end-to-end delivery status
